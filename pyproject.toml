@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "parol-pygen"
+version = "0.1.0"
+description = "PoC Python parser generator consuming parol export JSON"
+requires-python = ">=3.10"
+dependencies = [
+  "jsonschema>=4.21.0",
+  "scnr2",
+]
+
+[project.scripts]
+parol-pygen = "parol_pygen.cli:main"

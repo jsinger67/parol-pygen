@@ -16,6 +16,19 @@ Proof-of-concept Python parser runtime/generator consuming `parol export` JSON.
 python -m parol_pygen.cli --version
 python -m parol_pygen.cli info
 python -m parol_pygen.cli validate --export ../../crates/parol/tests/data/arg_tests/export_lalr1.expected.json
+python -m parol_pygen.cli generate --export ../../crates/parol/tests/data/arg_tests/export_lalr1.expected.json --out . --package arg_generated
+python -c "from arg_generated import Parser, UserActions; print(Parser(actions=UserActions()).parse('Var abc End').accepted)"
+```
+
+The recommended flow is generation-first:
+
+1. Validate export JSON (`validate`)
+2. Generate a Python package (`generate`)
+3. Import the generated `Parser`/`UserActions` from that package and parse input
+
+The direct runtime command still exists for low-level diagnostics:
+
+```bash
 python -m parol_pygen.cli run --export ../../crates/parol/tests/data/arg_tests/export_lalr1.expected.json --text "Var abc End"
 ```
 
@@ -108,35 +121,35 @@ python -m parol_pygen.cli --verbose-errors run --export ../../crates/parol/tests
 ## Semantic actions (parol-style)
 
 ```python
-from pathlib import Path
-
-from parol_pygen.parser import parser_from_export_file
-
-
-class Actions:
-    def on_start_list(self, node: dict[str, object]) -> dict[str, object]:
-        # Called when non-terminal StartList is fully reduced.
-        return {"kind": "StartList", "children": node["children"]}
+from arg_generated import Parser, UserActions
+from arg_generated.nodes import NonTerminalNode, StartListNode
 
 
-fixture = (
-    Path(__file__).resolve().parents[2]
-    / "crates"
-    / "parol"
-    / "tests"
-    / "data"
-    / "arg_tests"
-    / "export_lalr1.expected.json"
-)
+class Actions(UserActions):
+    def on_start_list(self, node: StartListNode):
+        # Typed callback for reduced non-terminal StartList.
+        return {"kind": "StartList", "children": node.children}
 
-parser = parser_from_export_file(fixture, actions=Actions())
+    def on_non_terminal(self, name: str, node: NonTerminalNode):
+        # Optional generic hook for all non-terminals.
+        return node
+
+
+parser = Parser(actions=Actions())
 result = parser.parse("Var abc End")
 print(result.accepted)
 print(result.value)
 ```
 
-The parser dispatches semantic callbacks by non-terminal name (`on_<non_terminal_in_snake_case>`).
-The callback return value is pushed as the reduced semantic value.
+This mirrors the standalone Pascal proof setup:
+
+- generate package once (for example `pascal_generated`)
+- subclass generated `UserActions`
+- override typed `on_<non_terminal>` methods
+- parse through generated `Parser`
+
+Callback dispatch remains name-based (`on_<non_terminal_in_snake_case>`), and callback
+return values are pushed as reduced semantic values.
 
 Note: depending on parse table shape (augmented start handling), the start symbol itself may
 not always appear as a user-visible reduce callback in this PoC.
@@ -144,46 +157,34 @@ not always appear as a user-visible reduce callback in this PoC.
 Advanced: a low-level `on_reduce(lhs_nt, prod_idx, rhs_values)` hook is still supported for
 internal experiments, but normal user code should prefer the non-terminal callbacks above.
 
-## Path To C#-Style Generated API
+## Generated API Architecture
 
-Yes, this can be done similarly to the C# generated LALR parser, and it does not need to stay
-inside this PoC package.
+`parol-pygen generate` now provides a C#-style generated API surface for Python consumers.
+The generated package is intended to be edited/extended by user code, while parser internals
+remain in the reusable runtime.
 
-Recommended direction (separate package/repo is fine):
+Generated files:
 
-1. Generator output split:
-    - `parser.py`: generated LALR facade and parse entry points
-    - `nodes.py`: generated typed node classes from `production_datatypes`
-    - `actions.py`: generated action interface/protocol with one method per non-terminal
-    - `scanner.py`: generated scanner tables/metadata facade
+- `parser.py`
+    - Generated parser facade
+    - Adapts runtime reduction payloads to generated typed node classes
+    - Dispatches typed semantic action callbacks
+- `nodes.py`
+    - Generated concrete node classes (`<NonTerminal>Node`) using `@dataclass`
+    - Shared base types for generic and non-terminal nodes
+- `actions.py`
+    - Generated action protocol with typed method signatures per non-terminal
+    - Base class with generic `on_non_terminal(name, node)` fallback hook
+- `user_actions.py`
+    - Editable starter implementation intended for user semantic logic
+- `export.json`
+    - Embedded parser export model used by the generated parser facade
 
-2. User-facing actions contract:
-    - Method naming: `on_<non_terminal_in_snake_case>(node: <GeneratedType>) -> Any`
-    - Dispatcher calls these methods after non-terminal reduction
-    - Keep `on_non_terminal(name, node)` as generic fallback
+Semantic action contract:
 
-3. Typed node generation:
-    - Use Python `@dataclass` for struct-like nodes
-    - Use sum-type style for alternations (base class + variant classes, or tagged dataclass)
-    - Preserve production index and source span metadata for diagnostics
+- Preferred method shape: `on_<non_terminal_in_snake_case>(node: <GeneratedNodeType>) -> Any`
+- Generic fallback: `on_non_terminal(name: str, node: NonTerminalNode) -> Any`
 
-4. Runtime/generator boundary:
-    - Keep runtime small and stable (parse engine, scanner runtime, diagnostics)
-    - Keep language-specific codegen in templates driven by exported model JSON
-
-5. Compatibility/versioning:
-    - Continue using `info` contract fields (`contract_revision`, `model_contract`, `schema_id`)
-    - Fail closed on unknown contract revisions in generated integration code
-
-Practical next milestone:
-
-- Implement `nodes.py` + `actions.py` generation first, while reusing the current parser runtime.
-  This gives a C#-like user API without requiring a full runtime rewrite.
-
-Current generator output (`parol-pygen generate`) now includes user-editable Python source files:
-
-- `actions.py`: generated action interface/protocol (`on_<non_terminal>` methods)
-- `nodes.py`: generated concrete node classes (`<NonTerminal>Node`) for typed action arguments
-- `user_actions.py`: editable skeleton class to implement semantic actions
-- `parser.py`: generated parser facade loading embedded `export.json`
-- `export.json`: embedded parser export model
+Compatibility contract for tooling remains machine-readable through `parol-pygen info`
+(`contract_revision`, `supported_contract_revisions`, `model_contract`, `schema_id`,
+`capabilities`). Consumers should continue to fail closed on unknown revisions.

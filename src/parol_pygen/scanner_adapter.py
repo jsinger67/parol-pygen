@@ -32,6 +32,7 @@ class ScannerAdapter:
         self._scnr2_scanner: Any | None = None
         self._scnr2_matches: list[Any] = []
         self._scnr2_match_index = 0
+        self._buffer: list[ParseToken] = []
 
         if prefer_scnr2:
             self._try_init_scnr2(scanner_model)
@@ -132,6 +133,7 @@ class ScannerAdapter:
     def feed(self, text: str) -> None:
         self._text = text
         self._offset = 0
+        self._buffer = []
         if self._scnr2_scanner is not None:
             prepared = self._prepare_text_for_scnr2(text)
             self._scnr2_matches = list(self._scnr2_scanner.find_matches_with_position(prepared))
@@ -142,7 +144,7 @@ class ScannerAdapter:
         while self._offset < len(self._text) and self._text[self._offset].isspace():
             self._offset += 1
 
-    def next_token(self) -> ParseToken:
+    def _read_next_raw_token(self) -> ParseToken:
         if self._scnr2_scanner is not None:
             if self._scnr2_match_index >= len(self._scnr2_matches):
                 return ParseToken(index=EOF_TOKEN_INDEX, lexeme="", offset=len(self._text))
@@ -178,3 +180,19 @@ class ScannerAdapter:
         token = ParseToken(index=best_index, lexeme=best_lexeme, offset=self._offset)
         self._offset += len(best_lexeme)
         return token
+
+    def peek_token(self, lookahead: int = 0) -> ParseToken:
+        if lookahead < 0:
+            raise ValueError("lookahead must be >= 0")
+
+        while len(self._buffer) <= lookahead:
+            self._buffer.append(self._read_next_raw_token())
+
+        return self._buffer[lookahead]
+
+    def consume_token(self) -> ParseToken:
+        self.peek_token(0)
+        return self._buffer.pop(0)
+
+    def next_token(self) -> ParseToken:
+        return self.consume_token()

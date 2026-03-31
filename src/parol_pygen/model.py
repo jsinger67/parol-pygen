@@ -76,6 +76,23 @@ class ScannerModel:
 
 
 @dataclass(frozen=True)
+class LookaheadTransition:
+    from_state: int
+    term: int
+    to_state: int
+    prod_num: int
+
+
+@dataclass(frozen=True)
+class LookaheadAutomaton:
+    non_terminal_index: int
+    non_terminal_name: str
+    prod0: int
+    k: int
+    transitions: list[LookaheadTransition]
+
+
+@dataclass(frozen=True)
 class ProductionDatatype:
     production_index: int
 
@@ -87,7 +104,7 @@ class ExportModel:
     non_terminal_names: list[str]
     start_symbol_index: int
     productions: list[Production]
-    lookahead_automata: list[dict[str, Any]]
+    lookahead_automata: list[LookaheadAutomaton]
     lalr_parse_table: LalrParseTable | None
     scanner: ScannerModel
     production_datatypes: list[ProductionDatatype]
@@ -222,6 +239,25 @@ def parse_export_model(raw: dict[str, Any]) -> ExportModel:
         ],
     )
 
+    lookahead_automata = [
+        LookaheadAutomaton(
+            non_terminal_index=int(a["non_terminal_index"]),
+            non_terminal_name=str(a["non_terminal_name"]),
+            prod0=int(a["prod0"]),
+            k=int(a["k"]),
+            transitions=[
+                LookaheadTransition(
+                    from_state=int(t["from_state"]),
+                    term=int(t["term"]),
+                    to_state=int(t["to_state"]),
+                    prod_num=int(t["prod_num"]),
+                )
+                for t in a["transitions"]
+            ],
+        )
+        for a in raw["lookahead_automata"]
+    ]
+
     production_datatypes = [
         ProductionDatatype(production_index=int(d["production_index"]))
         for d in raw["production_datatypes"]
@@ -233,7 +269,7 @@ def parse_export_model(raw: dict[str, Any]) -> ExportModel:
         non_terminal_names=[str(n) for n in raw["non_terminal_names"]],
         start_symbol_index=int(raw["start_symbol_index"]),
         productions=productions,
-        lookahead_automata=list(raw["lookahead_automata"]),
+        lookahead_automata=lookahead_automata,
         lalr_parse_table=lalr,
         scanner=scanner,
         production_datatypes=production_datatypes,

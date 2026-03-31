@@ -2,50 +2,11 @@ from __future__ import annotations
 
 from typing import Any
 
+from .diagnostics import terminal_labels
 from .model import ExportModel, ParseError, ParseResult
 from .scanner_adapter import ScannerAdapter
+from .semantic_actions import apply_semantic_action
 from .table_compiler import CompiledTables, expected_terminals
-
-
-def _to_snake_case(name: str) -> str:
-    out: list[str] = []
-    for idx, ch in enumerate(name):
-        if ch.isupper() and idx > 0:
-            out.append("_")
-        out.append(ch.lower())
-    return "".join(out)
-
-
-def _apply_semantic_action(
-    actions: Any,
-    model: ExportModel,
-    lhs_nt: int,
-    prod_idx: int,
-    rhs_values: list[Any],
-) -> Any:
-    if hasattr(actions, "on_reduce"):
-        return actions.on_reduce(lhs_nt, prod_idx, rhs_values)
-
-    non_terminal_name = model.non_terminal_names[lhs_nt]
-    snake_name = _to_snake_case(non_terminal_name)
-    payload = {
-        "non_terminal": non_terminal_name,
-        "non_terminal_index": lhs_nt,
-        "production_index": prod_idx,
-        "production_text": model.productions[prod_idx].text,
-        "children": rhs_values,
-    }
-
-    for method_name in (f"on_{snake_name}", snake_name, non_terminal_name):
-        method = getattr(actions, method_name, None)
-        if callable(method):
-            return method(payload)
-
-    generic = getattr(actions, "on_non_terminal", None)
-    if callable(generic):
-        return generic(non_terminal_name, payload)
-
-    return payload
 
 
 def parse_text(
@@ -66,11 +27,13 @@ def parse_text(
 
         if action_ref is None:
             expected = expected_terminals(compiled, state)
+            expected_labels = terminal_labels(model, expected)
             raise ParseError(
                 message=(
                     f"Parse error at offset {lookahead.offset}: token index {lookahead.index} "
                     f"('{lookahead.lexeme}') not expected; "
-                    f"expected token indices: {expected}"
+                    f"expected token indices: {expected}; "
+                    f"expected terminal labels: {expected_labels}"
                 ),
                 found_token_index=lookahead.index,
                 found_lexeme=lookahead.lexeme,
@@ -102,7 +65,7 @@ def parse_text(
                 del state_stack[-rhs_len:]
 
             if actions is not None:
-                reduced_value = _apply_semantic_action(actions, model, lhs_nt, prod_idx, rhs_values)
+                reduced_value = apply_semantic_action(actions, model, lhs_nt, prod_idx, rhs_values)
             else:
                 reduced_value = {
                     "non_terminal": model.non_terminal_names[lhs_nt],

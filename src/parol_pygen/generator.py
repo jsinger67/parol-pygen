@@ -142,6 +142,8 @@ def _render_user_actions_module(model: ExportModel) -> str:
 
 def _render_parser_module(model: ExportModel) -> str:
     type_names = ", ".join(_to_type_name(nt) for nt in model.non_terminal_names)
+    non_terminal_names_literal = repr(model.non_terminal_names)
+    production_texts_literal = repr({p.production_index: p.text for p in model.productions})
     imports = [
         "from __future__ import annotations",
         "",
@@ -154,9 +156,18 @@ def _render_parser_module(model: ExportModel) -> str:
         imports.append(f"from .nodes import GenericNode, NODE_CLASS_BY_NAME, NonTerminalNode, {type_names}")
     else:
         imports.append("from .nodes import GenericNode, NODE_CLASS_BY_NAME, NonTerminalNode")
-    imports.extend(["from parol_pygen.parser import parser_from_export_file", ""])
+    imports.extend(
+        [
+            "from parol_pygen.parser import parser_from_export_file",
+            "from parol_pygen.semantic_actions import dispatch_non_terminal_payload",
+            "",
+        ]
+    )
 
     lines: list[str] = imports + [
+        f"NON_TERMINAL_NAMES = {non_terminal_names_literal}",
+        f"PRODUCTION_TEXT_BY_INDEX = {production_texts_literal}",
+        "",
         "",
         "def _to_snake_case(name: str) -> str:",
         "    out: list[str] = []",
@@ -182,14 +193,40 @@ def _render_parser_module(model: ExportModel) -> str:
         "            children=list(payload.get('children', [])),",
         "        )",
         "",
+        "    def _payload_from_reduce(self, lhs_nt: int, prod_idx: int, rhs_values: list[Any]) -> dict[str, Any]:",
+        "        non_terminal_name = (",
+        "            NON_TERMINAL_NAMES[lhs_nt]",
+        "            if 0 <= lhs_nt < len(NON_TERMINAL_NAMES)",
+        "            else str(lhs_nt)",
+        "        )",
+        "        return {",
+        "            'non_terminal': non_terminal_name,",
+        "            'non_terminal_index': lhs_nt,",
+        "            'production_index': prod_idx,",
+        "            'production_text': PRODUCTION_TEXT_BY_INDEX.get(prod_idx, ''),",
+        "            'children': rhs_values,",
+        "        }",
+        "",
+        "    def on_production(self, lhs_nt: int, prod_idx: int, rhs_values: list[Any]) -> Any:",
+        "        if self._user_actions is not None:",
+        "            producer = getattr(self._user_actions, 'on_production', None)",
+        "            if callable(producer):",
+        "                return producer(lhs_nt, prod_idx, rhs_values)",
+        "            reducer = getattr(self._user_actions, 'on_reduce', None)",
+        "            if callable(reducer):",
+        "                return reducer(lhs_nt, prod_idx, rhs_values)",
+        "        payload = self._payload_from_reduce(lhs_nt, prod_idx, rhs_values)",
+        "        return self.on_non_terminal(str(payload['non_terminal']), payload)",
+        "",
+        "    def on_reduce(self, lhs_nt: int, prod_idx: int, rhs_values: list[Any]) -> Any:",
+        "        # Backward-compatible alias for older generated user code.",
+        "        return self.on_production(lhs_nt, prod_idx, rhs_values)",
+        "",
         "    def on_non_terminal(self, name: str, payload: dict[str, Any]) -> Any:",
         "        node = self._to_node(payload)",
         "        if self._user_actions is None:",
         "            return node",
-        "        generic = getattr(self._user_actions, 'on_non_terminal', None)",
-        "        if callable(generic):",
-        "            return generic(name, node)",
-        "        return node",
+        "        return dispatch_non_terminal_payload(self._user_actions, name, node)",
     ]
 
     for nt in model.non_terminal_names:
@@ -198,12 +235,6 @@ def _render_parser_module(model: ExportModel) -> str:
             [
                 "",
                 f"    def {method_name}(self, payload: dict[str, Any]) -> Any:",
-                "        node = self._to_node(payload)",
-                "        if self._user_actions is None:",
-                "            return node",
-                f"        method = getattr(self._user_actions, '{method_name}', None)",
-                "        if callable(method):",
-                "            return method(node)",
                 f"        return self.on_non_terminal('{nt}', payload)",
             ]
         )

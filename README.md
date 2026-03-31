@@ -5,10 +5,11 @@ Proof-of-concept Python parser runtime/generator consuming `parol export` JSON.
 ## Scope
 
 - Supports `ParserExportModel` version `1`
-- Supports `algorithm = "Lalr1"`
+- Supports export model validation for `algorithm = "Lalr1" | "Llk"`
+- Runtime parsing supports `Lalr1` and `Llk`
 - Uses `scnr2` Python binding as default scanner backend
 - Supports regex fallback scanner via `--no-scnr2`
-- Runs LALR shift/reduce/accept parse loop
+- Runs LALR shift/reduce and LLK predictive parse loops
 
 ## Quick start
 
@@ -20,17 +21,36 @@ python -m parol_pygen.cli generate --export ../../crates/parol/tests/data/arg_te
 python -c "from arg_generated import Parser, UserActions; print(Parser(actions=UserActions()).parse('Var abc End').accepted)"
 ```
 
+For a ready-to-run proof/project scaffold (scripts + runner + action skeleton):
+
+```bash
+python -m parol_pygen.cli init --out ./demo-proof --project "Demo Proof" --package demo_generated --export demo_export.json
+```
+
+This creates a standalone project skeleton with:
+
+- `scripts/bootstrap.ps1`
+- `scripts/generate-parser.ps1`
+- `scripts/run-proof.ps1`
+- `proof_runner.py`
+- `custom_actions.py`
+- `sample.txt`
+
 The recommended flow is generation-first:
 
 1. Validate export JSON (`validate`)
 2. Generate a Python package (`generate`)
 3. Import the generated `Parser`/`UserActions` from that package and parse input
 
+Alternative: use `init` first when you want a full project scaffold instead of only a generated package.
+
 The direct runtime command still exists for low-level diagnostics:
 
 ```bash
 python -m parol_pygen.cli run --export ../../crates/parol/tests/data/arg_tests/export_lalr1.expected.json --text "Var abc End"
 ```
+
+`run` supports both `Lalr1` and `Llk` exports.
 
 The `info` command prints JSON metadata (version, contract revision, model contract identifier,
 schema id, capabilities, supported algorithm/export model, commands,
@@ -154,8 +174,9 @@ return values are pushed as reduced semantic values.
 Note: depending on parse table shape (augmented start handling), the start symbol itself may
 not always appear as a user-visible reduce callback in this PoC.
 
-Advanced: a low-level `on_reduce(lhs_nt, prod_idx, rhs_values)` hook is still supported for
-internal experiments, but normal user code should prefer the non-terminal callbacks above.
+Advanced: a low-level `on_production(lhs_nt, prod_idx, rhs_values)` hook is available for
+algorithm-neutral internal experiments. `on_reduce(...)` remains supported as a
+backward-compatible alias, but new code should prefer `on_production`.
 
 ## Generated API Architecture
 

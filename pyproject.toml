@@ -14,3 +14,12 @@ dependencies = [
 
 [project.scripts]
 parol-pygen = "parol_pygen.cli:main"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+parol_pygen = ["schemas/*.json"]

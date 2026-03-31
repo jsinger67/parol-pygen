@@ -10,6 +10,7 @@ from .generator import generate_package
 from .loader import load_export_model, load_json_file
 from .model import ParseError
 from .parser import SCHEMA_PATH, parser_from_export_file
+from .scaffold import scaffold_project
 from .validator import ValidationError, validate_against_schema, validate_export_model
 
 
@@ -67,6 +68,18 @@ def _cmd_generate(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_init(args: argparse.Namespace) -> int:
+    out = scaffold_project(
+        out_dir=args.out,
+        project_name=args.project,
+        package_name=args.package,
+        export_file=args.export,
+        force=args.force,
+    )
+    print(f"Scaffolded project at {out}")
+    return 0
+
+
 def _cmd_info(args: argparse.Namespace) -> int:
     payload = {
         "name": "parol-pygen",
@@ -81,17 +94,20 @@ def _cmd_info(args: argparse.Namespace) -> int:
         "model_contract": "parser-export-model.v1",
         "schema_id": "parser-export-model.v1.schema.json",
         "supported_export_version": 1,
-        "supported_algorithms": ["Lalr1"],
-        "commands": ["validate", "run", "generate", "info"],
+        "supported_algorithms": ["Lalr1", "Llk"],
+        "commands": ["validate", "run", "generate", "init", "info"],
         "capabilities": [
             "cli.validate",
             "cli.run",
             "cli.generate",
+            "cli.init",
             "cli.info",
             "errors.concise",
             "errors.verbose",
             "scanner.scnr2.optional",
             "actions.non_terminal_callbacks",
+            "scaffold.project",
+            "model.algorithm.llk",
         ],
         "error_exit_codes": {"success": 0, "user_error": 2, "internal_error": 1},
     }
@@ -133,6 +149,18 @@ def build_arg_parser() -> argparse.ArgumentParser:
     p_generate.add_argument("--package", required=True)
     p_generate.set_defaults(func=_cmd_generate)
 
+    p_init = sub.add_parser("init", help="Scaffold a standalone parser project")
+    p_init.add_argument("--out", required=True, type=Path)
+    p_init.add_argument("--project", required=True)
+    p_init.add_argument("--package", default="generated_parser")
+    p_init.add_argument("--export", default="export.json")
+    p_init.add_argument(
+        "--force",
+        action="store_true",
+        help="Overwrite existing files in target directory",
+    )
+    p_init.set_defaults(func=_cmd_init)
+
     p_info = sub.add_parser("info", help="Print tool metadata and supported scope as JSON")
     p_info.set_defaults(func=_cmd_info)
 
@@ -146,6 +174,7 @@ def _is_user_error(exc: Exception) -> bool:
             ValidationError,
             ParseError,
             FileNotFoundError,
+            FileExistsError,
             ValueError,
             json.JSONDecodeError,
         ),

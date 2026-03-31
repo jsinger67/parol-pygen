@@ -1,6 +1,6 @@
-# parol-pygen (PoC)
+# parol-pygen
 
-Proof-of-concept Python parser runtime/generator consuming `parol export` JSON.
+Python parser runtime/generator consuming `parol export` JSON.
 
 ## Scope
 
@@ -16,8 +16,8 @@ Proof-of-concept Python parser runtime/generator consuming `parol export` JSON.
 ```bash
 python -m parol_pygen.cli --version
 python -m parol_pygen.cli info
-python -m parol_pygen.cli validate --export ../../crates/parol/tests/data/arg_tests/export_lalr1.expected.json
-python -m parol_pygen.cli generate --export ../../crates/parol/tests/data/arg_tests/export_lalr1.expected.json --out . --package arg_generated
+python -m parol_pygen.cli validate --export ./export.json
+python -m parol_pygen.cli generate --export ./export.json --out . --package arg_generated
 python -c "from arg_generated import Parser, UserActions; print(Parser(actions=UserActions()).parse('Var abc End').accepted)"
 ```
 
@@ -47,8 +47,10 @@ Alternative: use `init` first when you want a full project scaffold instead of o
 The direct runtime command still exists for low-level diagnostics:
 
 ```bash
-python -m parol_pygen.cli run --export ../../crates/parol/tests/data/arg_tests/export_lalr1.expected.json --text "Var abc End"
+python -m parol_pygen.cli run --export ./export.json --text "Var abc End"
 ```
+
+Replace `./export.json` with any export file produced by your `parol export` workflow.
 
 `run` supports both `Lalr1` and `Llk` exports.
 
@@ -122,7 +124,7 @@ if errorlevel 1 (
 Invalid input returns a non-zero exit code and prints parse diagnostics to stderr:
 
 ```bash
-python -m parol_pygen.cli run --export ../../crates/parol/tests/data/arg_tests/export_lalr1.expected.json --text "Var abc"
+python -m parol_pygen.cli run --export ./export.json --text "Var abc"
 echo $?
 ```
 
@@ -135,8 +137,18 @@ Exit code conventions used by this PoC CLI:
 Use `--verbose-errors` to include exception type names in stderr output:
 
 ```bash
-python -m parol_pygen.cli --verbose-errors run --export ../../crates/parol/tests/data/arg_tests/export_lalr1.expected.json --text "Var abc"
+python -m parol_pygen.cli --verbose-errors run --export ./export.json --text "Var abc"
 ```
+
+## Repository split note
+
+The package is maintained in a split-ready shape:
+
+- schema bundled as package data
+- tests use local fixtures
+- generated API and scaffold flow are self-contained
+
+This makes extracting `tools/parol-pygen` into a standalone repository straightforward.
 
 ## Semantic actions (parol-style)
 
@@ -176,7 +188,7 @@ not always appear as a user-visible reduce callback in this PoC.
 
 Advanced: a low-level `on_production(lhs_nt, prod_idx, rhs_values)` hook is available for
 algorithm-neutral internal experiments. `on_reduce(...)` remains supported as a
-backward-compatible alias, but new code should prefer `on_production`.
+backward-compatible alias; see `MIGRATION.md` for upgrade guidance.
 
 ## Generated API Architecture
 

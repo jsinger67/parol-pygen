@@ -131,8 +131,8 @@ git push -u origin main
 - Build artifacts:
 
 ```powershell
-uv pip install --system build
-python -m build
+uv sync --extra dev
+uv run python -m build
 ```
 
 - Test local install from wheel/sdist.
@@ -140,10 +140,10 @@ python -m build
 ## 8. TestPyPI and PyPI
 
 ```powershell
-uv pip install --system twine
-python -m twine upload --repository testpypi dist/*
+uv sync --extra dev
+uv run python -m twine upload --repository testpypi dist/*
 # smoke test from TestPyPI in a clean venv
-python -m twine upload dist/*
+uv run python -m twine upload dist/*
 ```
 
 Recommended sequence:

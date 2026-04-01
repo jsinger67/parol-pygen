@@ -29,6 +29,12 @@ dependencies = [
   "scnr2",
 ]
 
+[project.optional-dependencies]
+dev = [
+  "build>=1.2.1",
+  "twine>=5.0.0",
+]
+
 [project.urls]
 Homepage = "https://github.com/jsinger67/parol"
 Repository = "https://github.com/jsinger67/parol"

@@ -140,6 +140,38 @@ Use `--verbose-errors` to include exception type names in stderr output:
 python -m parol_pygen.cli --verbose-errors run --export ./export.json --text "Var abc"
 ```
 
+## Development with uv
+
+For local development and CI parity, prefer `uv` as package/environment manager.
+
+Initial setup:
+
+```bash
+uv venv
+uv sync
+```
+
+Run CLI commands in the managed environment:
+
+```bash
+uv run python -m parol_pygen.cli --version
+uv run python -m parol_pygen.cli info
+```
+
+Run tests:
+
+```bash
+uv run python -m unittest discover -s tests -p "test_*.py"
+```
+
+Build artifacts:
+
+```bash
+uv sync --extra dev
+uv run python -m build
+uv run python -m twine check dist/*
+```
+
 ## Repository split note
 
 The package is maintained in a split-ready shape:

@@ -25,18 +25,22 @@ jobs:
       - name: Setup uv
         uses: astral-sh/setup-uv@v5
 
+      - name: Create isolated venv
+        run: |
+          uv venv .venv
+
       - name: Install from TestPyPI
         run: |
-          uv pip install --system --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/ "parol-pygen==${{ github.event.inputs.version }}"
+          uv pip install --python .venv/bin/python --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/ "parol-pygen==${{ github.event.inputs.version }}"
 
       - name: Smoke CLI commands
         run: |
-          parol-pygen --version
-          python -m parol_pygen.cli info
+          .venv/bin/parol-pygen --version
+          .venv/bin/python -m parol_pygen.cli info
 
       - name: Smoke scaffold command
         run: |
-          python -m parol_pygen.cli init --out ./_smoke --project smoke --package smoke_generated
+          .venv/bin/python -m parol_pygen.cli init --out ./_smoke --project smoke --package smoke_generated
           test -f ./_smoke/README.md
           test -f ./_smoke/proof_runner.py
           test -f ./_smoke/custom_actions.py

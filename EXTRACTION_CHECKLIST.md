@@ -136,6 +136,35 @@ Recommended sequence:
 2. Run install and CLI smoke checks in a clean virtual environment.
 3. Publish to PyPI only after TestPyPI smoke checks are green.
 
+## 8a. Release version and tag gates
+
+Before starting publish workflows:
+
+1. Update version in `pyproject.toml`.
+2. Add release notes entry in `CHANGELOG.md`.
+3. Ensure CI and local tests are green.
+4. Create an annotated release tag in the standalone repository.
+
+Suggested command order:
+
+```powershell
+# 1) Bump version and commit
+git add pyproject.toml CHANGELOG.md
+git commit -m "chore(release): cut vX.Y.Z"
+
+# 2) Tag release candidate or final release
+git tag -a vX.Y.Z -m "parol-pygen vX.Y.Z"
+git push origin main
+git push origin vX.Y.Z
+```
+
+Publish workflow gates:
+
+1. Run `publish.yml` with `repository=testpypi`.
+2. Run `testpypi-smoke.yml` with `version=X.Y.Z`.
+3. Publish to PyPI only if smoke workflow is green.
+4. Create GitHub release notes for tag `vX.Y.Z`.
+
 ## 9. Post-extraction updates in monorepo
 
 - Replace `tools/parol-pygen` with a pointer note or submodule strategy.

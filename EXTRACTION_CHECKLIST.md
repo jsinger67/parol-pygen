@@ -163,7 +163,8 @@ Publish workflow gates:
 1. Run `publish.yml` with `repository=testpypi`.
 2. Run `testpypi-smoke.yml` with `version=X.Y.Z`.
 3. Publish to PyPI only if smoke workflow is green.
-4. Create GitHub release notes for tag `vX.Y.Z`.
+4. Run `pypi-smoke.yml` with `version=X.Y.Z` after PyPI publish.
+5. Create GitHub release notes for tag `vX.Y.Z` only after PyPI smoke is green.
 
 ## 9. Post-extraction updates in monorepo
 

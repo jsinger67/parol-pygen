@@ -14,8 +14,8 @@ def _load_json_schema_validator():
     try:
         import jsonschema  # type: ignore
     except Exception as exc:  # pragma: no cover - import error path
-        raise ValidationError(
-            "jsonschema is required. Install with `pip install jsonschema`."
+            raise ValidationError(
+                "jsonschema is required. Install with `uv pip install jsonschema` (or `pip install jsonschema`)."
         ) from exc
     return jsonschema
 

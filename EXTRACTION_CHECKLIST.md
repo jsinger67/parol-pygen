@@ -7,6 +7,7 @@ This checklist helps move `tools/parol-pygen` into a standalone repository with 
 - Ensure `tools/parol-pygen` tests are green in the monorepo.
 - Ensure there is a clean checkpoint commit on the working branch.
 - Decide target repository name (recommended: `parol-pygen`).
+- Ensure `uv` is installed and available on PATH.
 
 ## 2. Create split branch with subtree history
 
@@ -15,6 +16,21 @@ From the monorepo root:
 ```powershell
 git subtree split --prefix tools/parol-pygen -b split/parol-pygen
 ```
+
+Recommended automated flow (dry-run first):
+
+```powershell
+Set-Location D:/Source/parol/tools/parol-pygen
+./scripts/split-subtree.ps1
+./scripts/split-subtree.ps1 -Execute -ResetDestination
+```
+
+Notes:
+
+- The script defaults to dry-run and prints planned steps.
+- `-Execute` performs the extraction.
+- `-ResetDestination` removes an existing destination folder before recreating it.
+- If you prefer full manual control, use section 2a below.
 
 ## 2a. Split day playbook (recommended command order)
 
@@ -38,8 +54,8 @@ git init
 git pull D:/Source/parol split/parol-pygen
 
 # 4) Smoke verify
-python -m pip install -e .
-python -m unittest discover -s tests -p "test_*.py"
+uv sync
+uv run python -m unittest discover -s tests -p "test_*.py"
 
 # 5) First commit/tag in new repo (optional but recommended)
 git tag split-baseline
@@ -91,10 +107,10 @@ git checkout -b main FETCH_HEAD
 From the new repository root:
 
 ```powershell
-python -m pip install -e .
-python -m unittest discover -s tests -p "test_*.py"
-python -m parol_pygen.cli --version
-python -m parol_pygen.cli info
+uv sync
+uv run python -m unittest discover -s tests -p "test_*.py"
+uv run parol-pygen --version
+uv run python -m parol_pygen.cli info
 ```
 
 ## 5. Prepare GitHub repository and push
@@ -115,7 +131,7 @@ git push -u origin main
 - Build artifacts:
 
 ```powershell
-python -m pip install build
+uv pip install --system build
 python -m build
 ```
 
@@ -124,7 +140,7 @@ python -m build
 ## 8. TestPyPI and PyPI
 
 ```powershell
-python -m pip install twine
+uv pip install --system twine
 python -m twine upload --repository testpypi dist/*
 # smoke test from TestPyPI in a clean venv
 python -m twine upload dist/*

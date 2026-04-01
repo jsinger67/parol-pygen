@@ -128,7 +128,7 @@ python -m parol_pygen.cli run --export ./export.json --text "Var abc"
 echo $?
 ```
 
-Exit code conventions used by this PoC CLI:
+Exit code conventions used by the CLI:
 
 - `0`: success
 - `2`: user/input/data errors (invalid input text, invalid export JSON/schema, missing files)
@@ -184,7 +184,7 @@ Callback dispatch remains name-based (`on_<non_terminal_in_snake_case>`), and ca
 return values are pushed as reduced semantic values.
 
 Note: depending on parse table shape (augmented start handling), the start symbol itself may
-not always appear as a user-visible reduce callback in this PoC.
+not always appear as a user-visible callback.
 
 Advanced: a low-level `on_production(lhs_nt, prod_idx, rhs_values)` hook is available for
 algorithm-neutral internal experiments. `on_reduce(...)` remains supported as a

@@ -71,6 +71,20 @@ jobs:
         run: |
           uv run python -m build
 
+      - name: Verify artifact version in filenames
+        shell: bash
+        run: |
+          VERSION="${{ github.event.inputs.version }}"
+          test -f "dist/parol_pygen-${VERSION}.tar.gz"
+
+          shopt -s nullglob
+          wheels=(dist/parol_pygen-"${VERSION}"-*.whl)
+          if [ ${#wheels[@]} -eq 0 ]; then
+            echo "Missing wheel artifact for version ${VERSION}"
+            exit 1
+          fi
+          echo "Artifact version check passed for ${VERSION}"
+
       - name: Verify artifacts
         run: |
           uv run python -m twine check dist/*

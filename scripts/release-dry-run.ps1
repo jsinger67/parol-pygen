@@ -30,6 +30,16 @@ function Run-OrThrow {
     }
 }
 
+function Get-ProjectVersion {
+    param([string]$PyprojectPath)
+
+    $versionLine = Get-Content $PyprojectPath | Where-Object { $_ -match '^version\s*=\s*"([^"]+)"\s*$' } | Select-Object -First 1
+    if (-not $versionLine) {
+        throw "Failed to detect project version from pyproject.toml"
+    }
+    return [regex]::Match($versionLine, '^version\s*=\s*"([^"]+)"\s*$').Groups[1].Value
+}
+
 if (-not $ProjectPath) {
     $ProjectPath = (Resolve-Path (Join-Path $PSScriptRoot ".." )).Path
 }
@@ -38,6 +48,9 @@ $pyprojectPath = Join-Path $ProjectPath "pyproject.toml"
 if (-not (Test-Path $pyprojectPath)) {
     throw "pyproject.toml not found at: $pyprojectPath"
 }
+
+$projectVersion = Get-ProjectVersion -PyprojectPath $pyprojectPath
+$expectedVersion = if ([string]::IsNullOrWhiteSpace($Version)) { $projectVersion } else { $Version }
 
 $uv = Get-Command uv -ErrorAction SilentlyContinue
 if (-not $uv) {
@@ -75,6 +88,25 @@ Invoke-Step -Label "Build distribution artifacts" -Preview "Set-Location $Projec
     Push-Location $ProjectPath
     try {
         Run-OrThrow "uv run python -m build" "Build failed."
+    }
+    finally {
+        Pop-Location
+    }
+}
+
+Invoke-Step -Label "Validate artifact version in filenames" -Preview "Set-Location $ProjectPath ; check dist/parol_pygen-$expectedVersion artifacts" -Action {
+    Push-Location $ProjectPath
+    try {
+        $sdist = Join-Path $ProjectPath ("dist/parol_pygen-{0}.tar.gz" -f $expectedVersion)
+        if (-not (Test-Path $sdist)) {
+            throw "Missing expected sdist artifact: dist/parol_pygen-$expectedVersion.tar.gz"
+        }
+
+        $wheelPattern = Join-Path $ProjectPath ("dist/parol_pygen-{0}-*.whl" -f $expectedVersion)
+        $wheels = Get-ChildItem -Path $wheelPattern -ErrorAction SilentlyContinue
+        if (-not $wheels) {
+            throw "Missing expected wheel artifact for version $expectedVersion"
+        }
     }
     finally {
         Pop-Location

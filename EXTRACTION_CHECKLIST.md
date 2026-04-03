@@ -203,6 +203,7 @@ Notes:
 - PyPI publish job validates that tag `v<version>` exists and points to the current commit.
 - Smoke workflows retry package installation to tolerate temporary index propagation delays.
 - `release-dry-run.ps1` is a local preflight helper (gate + build + artifact check + scaffold smoke).
+- Local dry-run and publish CI both validate built artifact filenames against the target version.
 
 ## 9. Post-extraction updates in monorepo
 

@@ -178,6 +178,9 @@ Release preflight:
 uv run pwsh ./scripts/check-changelog-entry.ps1
 # optional explicit target version
 uv run pwsh ./scripts/check-changelog-entry.ps1 -Version 0.1.0
+
+# one-command local release dry-run (gate + build + artifact check + scaffold smoke)
+uv run pwsh ./scripts/release-dry-run.ps1 -Version 0.1.0 -Execute
 ```
 
 This verifies that the current `pyproject.toml` version has a matching entry in `CHANGELOG.md`

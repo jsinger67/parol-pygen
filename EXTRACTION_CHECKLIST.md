@@ -179,6 +179,7 @@ Suggested command order:
 ```powershell
 # 1) Bump version and commit
 ./scripts/check-changelog-entry.ps1
+./scripts/release-dry-run.ps1 -Version X.Y.Z -Execute
 git add pyproject.toml CHANGELOG.md
 git commit -m "chore(release): cut vX.Y.Z"
 
@@ -201,6 +202,7 @@ Notes:
 - Publish workflow requires explicit `version` input.
 - PyPI publish job validates that tag `v<version>` exists and points to the current commit.
 - Smoke workflows retry package installation to tolerate temporary index propagation delays.
+- `release-dry-run.ps1` is a local preflight helper (gate + build + artifact check + scaffold smoke).
 
 ## 9. Post-extraction updates in monorepo
 

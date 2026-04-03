@@ -29,7 +29,7 @@ For a ready-to-run proof/project scaffold (scripts + runner + action skeleton):
 python -m parol_pygen.cli init --out ./demo-proof --project "Demo Proof" --package demo_generated --export demo_export.json
 ```
 
-This creates a standalone project skeleton with:
+This creates a standalone project skeleton in `./demo-proof` with:
 
 - `scripts/bootstrap.ps1`
 - `scripts/generate-parser.ps1`
@@ -37,6 +37,9 @@ This creates a standalone project skeleton with:
 - `proof_runner.py`
 - `custom_actions.py`
 - `sample.txt`
+
+Note: these are generated files inside the scaffold output directory (for example `./demo-proof/scripts/...`),
+not maintainer scripts in this repository root.
 
 The recommended flow is generation-first:
 

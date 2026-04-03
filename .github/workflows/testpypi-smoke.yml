@@ -35,7 +35,12 @@ jobs:
 
       - name: Smoke CLI commands
         run: |
-          .venv/bin/parol-pygen --version
+          OUT=$(.venv/bin/parol-pygen --version)
+          echo "$OUT"
+          if [[ "$OUT" != *"${{ github.event.inputs.version }}"* ]]; then
+            echo "Expected installed CLI version to contain '${{ github.event.inputs.version }}'"
+            exit 1
+          fi
           .venv/bin/python -m parol_pygen.cli info
 
       - name: Smoke scaffold command

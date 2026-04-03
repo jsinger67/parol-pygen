@@ -113,6 +113,19 @@ uv run parol-pygen --version
 uv run python -m parol_pygen.cli info
 ```
 
+Recommended automated flow (dry-run first):
+
+```powershell
+Set-Location D:/Source/parol-pygen
+./scripts/verify-split.ps1
+./scripts/verify-split.ps1 -Execute
+```
+
+Notes:
+
+- The script defaults to dry-run and prints planned checks.
+- `-Execute` runs sync, tests, CLI info, and scaffold smoke validation.
+
 ## 5. Prepare GitHub repository and push
 
 ```powershell
@@ -157,7 +170,7 @@ Recommended sequence:
 Before starting publish workflows:
 
 1. Update version in `pyproject.toml`.
-2. Add release notes entry in `CHANGELOG.md`.
+2. Ensure a release entry for the version exists in `CHANGELOG.md`.
 3. Ensure CI and local tests are green.
 4. Create an annotated release tag in the standalone repository.
 
@@ -192,3 +205,4 @@ Publish workflow gates:
 
 - Tag extraction baseline in both repos.
 - Open a tracking issue for follow-up tasks (CI badges, release cadence, docs links).
+- Keep `scripts/split-subtree.ps1` and `scripts/verify-split.ps1` in sync with your extraction runbook.

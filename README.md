@@ -172,6 +172,15 @@ uv run python -m build
 uv run python -m twine check dist/*
 ```
 
+Release preflight:
+
+```bash
+uv run pwsh ./scripts/check-changelog-entry.ps1
+```
+
+This verifies that the current `pyproject.toml` version has a matching entry in `CHANGELOG.md`
+before publish workflows are started.
+
 ## Repository split note
 
 The package is maintained in a split-ready shape:

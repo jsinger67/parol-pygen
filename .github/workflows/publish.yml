@@ -13,8 +13,7 @@ on:
           - pypi
       version:
         description: "Release version to validate against pyproject.toml and CHANGELOG.md (for example 0.2.0)"
-        required: false
-        default: ""
+        required: true
         type: string
 
 jobs:
@@ -39,13 +38,7 @@ jobs:
       - name: Release gate (version and changelog entry)
         shell: pwsh
         run: |
-          $version = "${{ github.event.inputs.version }}"
-          if ([string]::IsNullOrWhiteSpace($version)) {
-            ./scripts/check-changelog-entry.ps1 -ProjectPath .
-          }
-          else {
-            ./scripts/check-changelog-entry.ps1 -ProjectPath . -Version $version
-          }
+          ./scripts/check-changelog-entry.ps1 -ProjectPath . -Version "${{ github.event.inputs.version }}"
 
       - name: Release gate (PyPI tag/version enforcement)
         if: ${{ github.event.inputs.repository == 'pypi' }}

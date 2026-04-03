@@ -198,7 +198,7 @@ Publish workflow gates:
 
 Notes:
 
-- PyPI publish job requires explicit `version` input.
+- Publish workflow requires explicit `version` input.
 - PyPI publish job validates that tag `v<version>` exists and points to the current commit.
 
 ## 9. Post-extraction updates in monorepo

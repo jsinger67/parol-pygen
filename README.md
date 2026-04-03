@@ -208,6 +208,29 @@ Recommended publish flow:
 2. Run smoke/install checks from a clean environment.
 3. Publish to PyPI only after TestPyPI checks are green.
 
+### Trusted Publishing setup (PyPI/TestPyPI)
+
+This repository uses GitHub OIDC Trusted Publishing in
+`.github/workflows/publish.yml` (`id-token: write` + `pypa/gh-action-pypi-publish`).
+No API token secrets are required for publish jobs.
+
+Configure publishers in both package indexes:
+
+1. In TestPyPI project settings, add a Trusted Publisher:
+    - owner/repo: `jsinger67/parol-pygen`
+    - workflow file: `.github/workflows/publish.yml`
+    - environment: `testpypi`
+2. In PyPI project settings, add a Trusted Publisher:
+    - owner/repo: `jsinger67/parol-pygen`
+    - workflow file: `.github/workflows/publish.yml`
+    - environment: `pypi`
+
+Recommended first verification:
+
+1. Run workflow dispatch with `repository=testpypi` and `version=X.Y.Z`.
+2. Confirm successful TestPyPI publish.
+3. Run with `repository=pypi` from the commit tagged `vX.Y.Z`.
+
 ## Semantic actions (parol-style)
 
 ```python

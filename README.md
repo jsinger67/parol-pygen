@@ -1,5 +1,7 @@
 # parol-pygen
 
+![ParolPyLogo](https://raw.githubusercontent.com/jsinger67/parol-pygen/main/logo/ParolPy.png)
+
 Python parser runtime/generator consuming `parol export` JSON.
 
 ## Scope

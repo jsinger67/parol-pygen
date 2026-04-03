@@ -489,6 +489,27 @@ class CliTests(unittest.TestCase):
             self.assertIn("demo_generated", readme)
             self.assertIn("demo_export.json", readme)
 
+    def test_init_command_with_export_generates_typed_start_callback(self) -> None:
+        with TemporaryDirectory() as tmp:
+            out_dir = Path(tmp) / "demo-proof"
+            cp = _run_cli(
+                "init",
+                "--out",
+                str(out_dir),
+                "--project",
+                "Demo Proof",
+                "--package",
+                "demo_generated",
+                "--export",
+                str(FIXTURE),
+            )
+            self.assertEqual(cp.returncode, 0, cp.stderr)
+
+            custom_actions = (out_dir / "custom_actions.py").read_text(encoding="utf-8")
+            self.assertIn("from demo_generated.nodes import StartNode", custom_actions)
+            self.assertIn("def on_start(self, node: StartNode):", custom_actions)
+            self.assertIn("self.parse_result = node", custom_actions)
+
     def test_init_command_rejects_non_empty_target_without_force(self) -> None:
         with TemporaryDirectory() as tmp:
             out_dir = Path(tmp) / "demo-proof"

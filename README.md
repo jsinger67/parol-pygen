@@ -18,7 +18,7 @@ Python parser runtime/generator consuming `parol export` JSON.
 Export parser metadata JSON from a grammar file (example):
 
 ```bash
-parol export --grammar-file ./my-grammar-exp.par --output-file ./export.json
+parol export --grammar-file ./my-grammar-exp.par --output-file ./export.json --pretty
 ```
 
 Then run `parol-pygen` commands against `./export.json`:

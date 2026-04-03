@@ -115,19 +115,7 @@ def _render_user_actions_module(model: ExportModel) -> str:
         "    \"\"\"Edit this class and override on_<non_terminal> methods as needed.\"\"\"",
     ]
 
-    if model.non_terminal_names:
-        first_nt = model.non_terminal_names[0]
-        first_type = _to_type_name(first_nt)
-        lines.insert(4, f"from .nodes import {first_type}")
-        lines.extend(
-            [
-                "",
-                f"    def on_{_to_snake_case(first_nt)}(self, node: {first_type}):",
-                "        return node",
-            ]
-        )
-    else:
-        lines.extend(["", "    pass"])
+    lines.extend(["", "    pass"])
 
     lines.extend(
         [
@@ -167,6 +155,7 @@ def _render_parser_module(model: ExportModel) -> str:
     lines: list[str] = imports + [
         f"NON_TERMINAL_NAMES = {non_terminal_names_literal}",
         f"PRODUCTION_TEXT_BY_INDEX = {production_texts_literal}",
+        f"START_SYMBOL_NAME = {repr(model.non_terminal_names[model.start_symbol_index]) if model.non_terminal_names else repr('')}",
         "",
         "",
         "def _to_snake_case(name: str) -> str:",

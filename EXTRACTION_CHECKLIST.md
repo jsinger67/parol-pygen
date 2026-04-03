@@ -178,6 +178,7 @@ Suggested command order:
 
 ```powershell
 # 1) Bump version and commit
+./scripts/check-changelog-entry.ps1
 git add pyproject.toml CHANGELOG.md
 git commit -m "chore(release): cut vX.Y.Z"
 

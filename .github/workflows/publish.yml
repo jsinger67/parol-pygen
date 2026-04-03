@@ -25,6 +25,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup Python
         uses: actions/setup-python@v5
@@ -44,6 +46,29 @@ jobs:
           else {
             ./scripts/check-changelog-entry.ps1 -ProjectPath . -Version $version
           }
+
+      - name: Release gate (PyPI tag/version enforcement)
+        if: ${{ github.event.inputs.repository == 'pypi' }}
+        shell: pwsh
+        run: |
+          $version = "${{ github.event.inputs.version }}"
+          if ([string]::IsNullOrWhiteSpace($version)) {
+            throw "PyPI publish requires explicit 'version' workflow input."
+          }
+
+          $tag = "v$version"
+          $headSha = (git rev-parse HEAD).Trim()
+          $tagSha = (git rev-list -n 1 $tag).Trim()
+
+          if (-not $tagSha) {
+            throw "Required tag '$tag' was not found in the repository."
+          }
+
+          if ($headSha -ne $tagSha) {
+            throw "PyPI publish must run from commit tagged '$tag'. HEAD=$headSha TAG=$tagSha"
+          }
+
+          Write-Host "PyPI guard passed: tag '$tag' matches current commit."
 
       - name: Install dependencies
         run: |

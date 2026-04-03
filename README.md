@@ -186,20 +186,25 @@ uv run pwsh ./scripts/release-dry-run.ps1 -Version 0.1.0 -Execute
 This verifies that the current `pyproject.toml` version has a matching entry in `CHANGELOG.md`
 before publish workflows are started.
 
-## Repository split note
+## Release checklist (maintainers)
 
-The package is maintained in a split-ready shape:
+Suggested command order for cutting a release `X.Y.Z`:
 
-- schema bundled as package data
-- tests use local fixtures
-- generated API and scaffold flow are self-contained
+```powershell
+./scripts/check-changelog-entry.ps1 -Version X.Y.Z
+./scripts/release-dry-run.ps1 -Version X.Y.Z -Execute
+git add pyproject.toml CHANGELOG.md
+git commit -m "chore(release): cut vX.Y.Z"
+git tag -a vX.Y.Z -m "parol-pygen vX.Y.Z"
+git push origin main
+git push origin vX.Y.Z
+```
 
-This makes extracting `tools/parol-pygen` into a standalone repository straightforward.
+Recommended publish flow:
 
-## Release day quick link
-
-For maintainers, the exact first-release command/order and rollback gates are documented in
-`EXTRACTION_CHECKLIST.md`, section `8b. Release execution card (first standalone release)`.
+1. Publish to TestPyPI first.
+2. Run smoke/install checks from a clean environment.
+3. Publish to PyPI only after TestPyPI checks are green.
 
 ## Semantic actions (parol-style)
 

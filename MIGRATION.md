@@ -12,10 +12,3 @@ Recommended update for user code:
 - keep `on_non_terminal(name, node)` generic callback unchanged
 - migrate low-level callback implementations from `on_reduce` to `on_production`
 
-## Extraction readiness
-
-The `tools/parol-pygen` subtree is split-ready:
-
-- bundled schema package data under `src/parol_pygen/schemas`
-- local test fixtures under `tests/fixtures`
-- standalone project scaffold command via `parol-pygen init`

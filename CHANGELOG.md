@@ -6,4 +6,4 @@ All notable changes to this project will be documented in this file.
 
 - Initial extraction-prep baseline with Lalr1 and Llk runtime support.
 - Added project scaffolding command and uv-first CI/release workflows.
-- Added extraction and split verification scripts.
+- Added release preflight scripts.

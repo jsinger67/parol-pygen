@@ -196,6 +196,11 @@ The package is maintained in a split-ready shape:
 
 This makes extracting `tools/parol-pygen` into a standalone repository straightforward.
 
+## Release day quick link
+
+For maintainers, the exact first-release command/order and rollback gates are documented in
+`EXTRACTION_CHECKLIST.md`, section `8b. Release execution card (first standalone release)`.
+
 ## Semantic actions (parol-style)
 
 ```python

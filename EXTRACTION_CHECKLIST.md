@@ -205,6 +205,42 @@ Notes:
 - `release-dry-run.ps1` is a local preflight helper (gate + build + artifact check + scaffold smoke).
 - Local dry-run and publish CI both validate built artifact filenames against the target version.
 
+## 8b. Release execution card (first standalone release)
+
+Use this exact order on release day:
+
+1. Set release version `X.Y.Z` in `pyproject.toml` and ensure `CHANGELOG.md` contains `X.Y.Z`.
+2. Run local gate/preflight:
+
+```powershell
+./scripts/check-changelog-entry.ps1 -Version X.Y.Z
+./scripts/release-dry-run.ps1 -Version X.Y.Z -Execute
+```
+
+3. Commit and tag:
+
+```powershell
+git add pyproject.toml CHANGELOG.md
+git commit -m "chore(release): cut vX.Y.Z"
+git tag -a vX.Y.Z -m "parol-pygen vX.Y.Z"
+git push origin main
+git push origin vX.Y.Z
+```
+
+4. Run GitHub workflow `publish.yml` with:
+	- `repository=testpypi`
+	- `version=X.Y.Z`
+5. Run workflow `testpypi-smoke.yml` with `version=X.Y.Z`.
+6. If and only if step 5 is green: run `publish.yml` with `repository=pypi` and `version=X.Y.Z`.
+7. Run workflow `pypi-smoke.yml` with `version=X.Y.Z`.
+8. If step 7 is green: create GitHub Release notes for tag `vX.Y.Z`.
+
+Rollback gates:
+
+1. If local preflight fails: do not tag or publish; fix and rerun from step 2.
+2. If TestPyPI publish/smoke fails: do not run PyPI publish; fix and rerun from step 4.
+3. If PyPI smoke fails: stop further announcements, prepare patch release `X.Y.(Z+1)`.
+
 ## 9. Post-extraction updates in monorepo
 
 - Replace `tools/parol-pygen` with a pointer note or submodule strategy.

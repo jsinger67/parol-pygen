@@ -176,6 +176,8 @@ Release preflight:
 
 ```bash
 uv run pwsh ./scripts/check-changelog-entry.ps1
+# optional explicit target version
+uv run pwsh ./scripts/check-changelog-entry.ps1 -Version 0.1.0
 ```
 
 This verifies that the current `pyproject.toml` version has a matching entry in `CHANGELOG.md`

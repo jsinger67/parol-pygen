@@ -190,7 +190,7 @@ git push origin vX.Y.Z
 
 Publish workflow gates:
 
-1. Run `publish.yml` with `repository=testpypi`.
+1. Run `publish.yml` with `repository=testpypi` and `version=X.Y.Z`.
 2. Run `testpypi-smoke.yml` with `version=X.Y.Z`.
 3. Publish to PyPI only if smoke workflow is green.
 4. Run `pypi-smoke.yml` with `version=X.Y.Z` after PyPI publish.

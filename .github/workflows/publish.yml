@@ -11,6 +11,11 @@ on:
         options:
           - testpypi
           - pypi
+      version:
+        description: "Release version to validate against pyproject.toml and CHANGELOG.md (for example 0.2.0)"
+        required: false
+        default: ""
+        type: string
 
 jobs:
   build:
@@ -32,7 +37,13 @@ jobs:
       - name: Release gate (version and changelog entry)
         shell: pwsh
         run: |
-          ./scripts/check-changelog-entry.ps1 -ProjectPath .
+          $version = "${{ github.event.inputs.version }}"
+          if ([string]::IsNullOrWhiteSpace($version)) {
+            ./scripts/check-changelog-entry.ps1 -ProjectPath .
+          }
+          else {
+            ./scripts/check-changelog-entry.ps1 -ProjectPath . -Version $version
+          }
 
       - name: Install dependencies
         run: |

@@ -31,7 +31,20 @@ jobs:
 
       - name: Install from PyPI
         run: |
-          uv pip install --python .venv/bin/python "parol-pygen==${{ github.event.inputs.version }}"
+          for attempt in 1 2 3 4 5; do
+            if uv pip install --python .venv/bin/python "parol-pygen==${{ github.event.inputs.version }}"; then
+              echo "Install succeeded on attempt $attempt"
+              break
+            fi
+
+            if [ "$attempt" -eq 5 ]; then
+              echo "Install failed after $attempt attempts"
+              exit 1
+            fi
+
+            echo "Install attempt $attempt failed; waiting for index propagation..."
+            sleep 20
+          done
 
       - name: Smoke CLI commands
         run: |

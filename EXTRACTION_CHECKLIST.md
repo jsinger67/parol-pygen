@@ -200,6 +200,7 @@ Notes:
 
 - Publish workflow requires explicit `version` input.
 - PyPI publish job validates that tag `v<version>` exists and points to the current commit.
+- Smoke workflows retry package installation to tolerate temporary index propagation delays.
 
 ## 9. Post-extraction updates in monorepo
 

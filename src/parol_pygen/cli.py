@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import importlib.metadata
 import json
 import re
 import sys
@@ -15,6 +16,13 @@ from .validator import ValidationError, validate_against_schema, validate_export
 
 
 def _read_project_version() -> str:
+    # Prefer installed package metadata (works for wheels/sdists in site-packages).
+    try:
+        return importlib.metadata.version("parol-pygen")
+    except importlib.metadata.PackageNotFoundError:
+        pass
+
+    # Fallback for local source-tree runs where package metadata may not exist yet.
     pyproject = Path(__file__).resolve().parents[2] / "pyproject.toml"
     version_pattern = re.compile(r'^\s*version\s*=\s*"([^"]+)"\s*$')
     try:

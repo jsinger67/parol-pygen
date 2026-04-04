@@ -1,5 +1,10 @@
 # parol-pygen
 
+[![CI](https://github.com/jsinger67/parol-pygen/actions/workflows/python-ci.yml/badge.svg)](https://github.com/jsinger67/parol-pygen/actions/workflows/python-ci.yml)
+[![PyPI version](https://img.shields.io/pypi/v/parol-pygen.svg)](https://pypi.org/project/parol-pygen/)
+[![Python versions](https://img.shields.io/pypi/pyversions/parol-pygen.svg)](https://pypi.org/project/parol-pygen/)
+[![License](https://img.shields.io/pypi/l/parol-pygen.svg)](https://pypi.org/project/parol-pygen/)
+
 ![ParolPyLogo](https://raw.githubusercontent.com/jsinger67/parol-pygen/main/logo/ParolPy.png)
 
 Python parser runtime/generator consuming `parol export` JSON.

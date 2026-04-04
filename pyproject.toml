@@ -34,9 +34,9 @@ dev = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/jsinger67/parol"
-Repository = "https://github.com/jsinger67/parol"
-Issues = "https://github.com/jsinger67/parol/issues"
+Homepage = "https://github.com/jsinger67/parol-pygen"
+Repository = "https://github.com/jsinger67/parol-pygen"
+Issues = "https://github.com/jsinger67/parol-pygen/issues"
 
 [project.scripts]
 parol-pygen = "parol_pygen.cli:main"

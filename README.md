@@ -1,10 +1,10 @@
 # parol-pygen
 
 [![CI](https://github.com/jsinger67/parol-pygen/actions/workflows/python-ci.yml/badge.svg)](https://github.com/jsinger67/parol-pygen/actions/workflows/python-ci.yml)
-<!-- [![TestPyPI smoke](https://github.com/jsinger67/parol-pygen/actions/workflows/testpypi-smoke.yml/badge.svg)](https://github.com/jsinger67/parol-pygen/actions/workflows/testpypi-smoke.yml) -->
 [![PyPI version](https://img.shields.io/pypi/v/parol-pygen.svg)](https://pypi.org/project/parol-pygen/)
 [![Python versions](https://img.shields.io/pypi/pyversions/parol-pygen.svg)](https://pypi.org/project/parol-pygen/)
 [![License](https://img.shields.io/pypi/l/parol-pygen.svg)](https://pypi.org/project/parol-pygen/)
+<!-- [![TestPyPI smoke](https://github.com/jsinger67/parol-pygen/actions/workflows/testpypi-smoke.yml/badge.svg)](https://github.com/jsinger67/parol-pygen/actions/workflows/testpypi-smoke.yml) -->
 
 ![ParolPyLogo](https://raw.githubusercontent.com/jsinger67/parol-pygen/main/logo/ParolPy.png)
 

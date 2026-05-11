@@ -35,16 +35,30 @@ jobs:
       - name: Setup uv
         uses: astral-sh/setup-uv@v5
 
+      - name: Normalize release version input
+        id: normalize_version
+        shell: bash
+        run: |
+          RAW="${{ github.event.inputs.version }}"
+          VERSION="${RAW#v}"
+          VERSION="${VERSION#V}"
+          if [ -z "$VERSION" ]; then
+            echo "Normalized version is empty. Input was '$RAW'"
+            exit 1
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "Using normalized version: $VERSION"
+
       - name: Release gate (version and changelog entry)
         shell: pwsh
         run: |
-          ./scripts/check-changelog-entry.ps1 -ProjectPath . -Version "${{ github.event.inputs.version }}"
+          ./scripts/check-changelog-entry.ps1 -ProjectPath . -Version "${{ steps.normalize_version.outputs.version }}"
 
       - name: Release gate (PyPI tag/version enforcement)
         if: ${{ github.event.inputs.repository == 'pypi' }}
         shell: pwsh
         run: |
-          $version = "${{ github.event.inputs.version }}"
+          $version = "${{ steps.normalize_version.outputs.version }}"
           if ([string]::IsNullOrWhiteSpace($version)) {
             throw "PyPI publish requires explicit 'version' workflow input."
           }
@@ -74,7 +88,7 @@ jobs:
       - name: Verify artifact version in filenames
         shell: bash
         run: |
-          VERSION="${{ github.event.inputs.version }}"
+          VERSION="${{ steps.normalize_version.outputs.version }}"
           test -f "dist/parol_pygen-${VERSION}.tar.gz"
 
           shopt -s nullglob

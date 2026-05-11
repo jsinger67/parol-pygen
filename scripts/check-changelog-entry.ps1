@@ -16,6 +16,17 @@ function Get-ProjectVersion {
     return [regex]::Match($versionLine, '^version\s*=\s*"([^"]+)"\s*$').Groups[1].Value
 }
 
+function Normalize-Version {
+    param([string]$Value)
+
+    if ([string]::IsNullOrWhiteSpace($Value)) {
+        return $Value
+    }
+
+    # Accept workflow/tag style inputs like v0.2.0 and compare canonical values.
+    return ($Value.Trim() -replace '^[vV]', '')
+}
+
 if (-not $ProjectPath) {
     $ProjectPath = (Resolve-Path (Join-Path $PSScriptRoot ".." )).Path
 }
@@ -29,6 +40,9 @@ $projectVersion = Get-ProjectVersion -PyprojectPath $pyprojectPath
 if (-not $Version) {
     $Version = $projectVersion
 }
+
+$Version = Normalize-Version -Value $Version
+$projectVersion = Normalize-Version -Value $projectVersion
 
 if ($Version -ne $projectVersion) {
     throw "Version mismatch: requested '$Version' but pyproject.toml contains '$projectVersion'"

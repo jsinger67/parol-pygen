@@ -29,6 +29,33 @@ jobs:
         run: |
           uv venv .venv
 
+      - name: Verify requested version is on TestPyPI
+        run: |
+          .venv/bin/python - <<'PY'
+          import re
+          import urllib.request
+
+          requested = "${{ github.event.inputs.version }}"
+          url = "https://test.pypi.org/simple/parol-pygen/"
+
+          try:
+            with urllib.request.urlopen(url, timeout=30) as response:
+              html = response.read().decode("utf-8", errors="replace")
+          except Exception as exc:
+            raise SystemExit(f"Unable to query TestPyPI index at {url}: {exc}")
+
+          versions = sorted(set(re.findall(r"parol_pygen-([0-9][^\"< ]+?)(?:-py3-none-any\\.whl|\\.tar\\.gz)", html)))
+
+          if requested not in versions:
+            available = ", ".join(versions) if versions else "<none>"
+            raise SystemExit(
+              "Requested version is not available on TestPyPI yet. "
+              f"requested={requested}, available={available}"
+            )
+
+          print(f"Requested version {requested} is available on TestPyPI")
+          PY
+
       - name: Install from TestPyPI
         run: |
           for attempt in 1 2 3 4 5; do

@@ -44,7 +44,7 @@ jobs:
           except Exception as exc:
             raise SystemExit(f"Unable to query TestPyPI index at {url}: {exc}")
 
-          versions = sorted(set(re.findall(r"parol_pygen-([0-9][^\"< ]+?)(?:-py3-none-any\\.whl|\\.tar\\.gz)", html)))
+          versions = sorted(set(re.findall(r"parol_pygen-([0-9][^\"< ]+?)(?:-py3-none-any\.whl|\.tar\.gz)", html)))
 
           if requested not in versions:
             available = ", ".join(versions) if versions else "<none>"

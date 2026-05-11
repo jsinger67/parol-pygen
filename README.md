@@ -231,6 +231,31 @@ Recommended publish flow:
 2. Run smoke/install checks from a clean environment.
 3. Publish to PyPI only after TestPyPI checks are green.
 
+### TestPyPI smoke runbook
+
+Use this order for a release version X.Y.Z.
+
+1. Ensure the target version in pyproject.toml is exactly X.Y.Z.
+2. Trigger publish.yml with repository=testpypi and version=X.Y.Z.
+3. Wait until the TestPyPI publish job is successful.
+4. Verify TestPyPI index lists X.Y.Z for parol-pygen:
+    https://test.pypi.org/simple/parol-pygen/
+5. Trigger testpypi-smoke.yml with version=X.Y.Z.
+6. Confirm both matrix jobs pass (Python 3.10 and 3.12).
+7. Only after smoke is green, trigger publish.yml with repository=pypi and version=X.Y.Z.
+
+If TestPyPI smoke fails, use this quick triage:
+
+1. Failure in "Verify requested version is on TestPyPI":
+    X.Y.Z is not indexed yet, or the wrong version was entered.
+2. Failure in "Install from TestPyPI":
+    likely index/dependency resolution issue; check the install error in logs.
+3. Failure in CLI or scaffold smoke steps:
+    package installed, but runtime/CLI behavior regressed.
+
+Important: testpypi-smoke.yml validates a version that is already published to TestPyPI.
+It does not publish the package itself.
+
 ### Trusted Publishing setup (PyPI/TestPyPI)
 
 This repository uses GitHub OIDC Trusted Publishing in

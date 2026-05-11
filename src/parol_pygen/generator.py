@@ -6,7 +6,7 @@ from typing import Any
 
 from .loader import load_json_file
 from .model import ExportModel, parse_export_model
-from .parser import SCHEMA_PATH
+from .parser import schema_path_for_export
 from .validator import validate_against_schema
 
 
@@ -248,7 +248,7 @@ def _render_parser_module(model: ExportModel) -> str:
 
 def generate_package(export_path: str | Path, out_dir: str | Path, package_name: str) -> Path:
     raw = load_json_file(export_path)
-    validate_against_schema(raw, SCHEMA_PATH)
+    validate_against_schema(raw, schema_path_for_export(raw))
     model = parse_export_model(raw)
 
     pkg_name = _normalize_package_name(package_name)

@@ -7,7 +7,7 @@ from tempfile import TemporaryDirectory
 from parol_pygen.generator import generate_package
 from parol_pygen.loader import load_export_model, load_json_file
 from parol_pygen.model import ParseError
-from parol_pygen.parser import SCHEMA_PATH, parser_from_export_file
+from parol_pygen.parser import parser_from_export_file, schema_path_for_export
 from parol_pygen.validator import validate_against_schema, validate_export_model
 
 
@@ -32,13 +32,19 @@ class PocTests(unittest.TestCase):
 
     def test_fixture_validates_against_schema(self) -> None:
         raw = load_json_file(FIXTURE)
-        validate_against_schema(raw, SCHEMA_PATH)
+        validate_against_schema(raw, schema_path_for_export(raw))
 
     def test_llk_fixture_validates_against_schema_and_model(self) -> None:
         raw = load_json_file(LLK_FIXTURE)
-        validate_against_schema(raw, SCHEMA_PATH)
+        validate_against_schema(raw, schema_path_for_export(raw))
         model = load_export_model(LLK_FIXTURE)
         validate_export_model(model)
+
+    def test_v1_export_without_skip_tokens_is_supported(self) -> None:
+        raw = load_json_file(FIXTURE)
+        scanner_state = raw["scanner"]["scanner_states"][0]
+        scanner_state.pop("skip_tokens", None)
+        validate_against_schema(raw, schema_path_for_export(raw))
 
     def test_lalr_parser_accepts_valid_sample(self) -> None:
         parser = parser_from_export_file(FIXTURE)

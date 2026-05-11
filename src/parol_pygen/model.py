@@ -66,6 +66,7 @@ class ScannerState:
     auto_newline: bool
     auto_ws: bool
     allow_unmatched: bool
+    skip_tokens: list[int]
     transitions: list[ScannerTransition]
 
 
@@ -217,6 +218,7 @@ def parse_export_model(raw: dict[str, Any]) -> ExportModel:
                 auto_newline=bool(s["auto_newline"]),
                 auto_ws=bool(s["auto_ws"]),
                 allow_unmatched=bool(s["allow_unmatched"]),
+                skip_tokens=[int(t) for t in s.get("skip_tokens", [])],
                 transitions=[
                     ScannerTransition(
                         terminal_index=int(tr["terminal_index"]),

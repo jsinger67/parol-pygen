@@ -41,6 +41,7 @@ class ScannerDefinitionTests(unittest.TestCase):
                     auto_newline=True,
                     auto_ws=True,
                     allow_unmatched=False,
+                    skip_tokens=[],
                     transitions=[
                         ScannerTransition(
                             terminal_index=10,
@@ -58,6 +59,7 @@ class ScannerDefinitionTests(unittest.TestCase):
                     auto_newline=True,
                     auto_ws=False,
                     allow_unmatched=False,
+                    skip_tokens=[],
                     transitions=[
                         ScannerTransition(
                             terminal_index=12,

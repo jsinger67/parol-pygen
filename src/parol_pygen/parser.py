@@ -31,7 +31,19 @@ class Parser:
         raise ValidationError(f"Unsupported parser algorithm: {self.model.algorithm}")
 
 
-SCHEMA_PATH = Path(files("parol_pygen.schemas").joinpath("parser-export-model.v1.schema.json"))
+SCHEMA_V1_PATH = Path(files("parol_pygen.schemas").joinpath("parser-export-model.v1.schema.json"))
+SCHEMA_V2_PATH = Path(files("parol_pygen.schemas").joinpath("parser-export-model.v2.schema.json"))
+# Default schema path kept for compatibility with existing imports.
+SCHEMA_PATH = SCHEMA_V2_PATH
+
+
+def schema_path_for_export(raw_export: dict[str, Any]) -> Path:
+    version = raw_export.get("version")
+    if version == 1:
+        return SCHEMA_V1_PATH
+    if version == 2:
+        return SCHEMA_V2_PATH
+    raise ValidationError(f"Unsupported export version: {version}")
 
 
 def parser_from_export_file(
@@ -40,6 +52,6 @@ def parser_from_export_file(
     prefer_scnr2: bool = True,
 ) -> Parser:
     raw = load_json_file(export_path)
-    validate_against_schema(raw, SCHEMA_PATH)
+    validate_against_schema(raw, schema_path_for_export(raw))
     model = load_export_model(export_path)
     return Parser(model, actions=actions, prefer_scnr2=prefer_scnr2)

@@ -10,7 +10,7 @@ from pathlib import Path
 from .generator import generate_package
 from .loader import load_export_model, load_json_file
 from .model import ParseError
-from .parser import SCHEMA_PATH, parser_from_export_file
+from .parser import parser_from_export_file, schema_path_for_export
 from .scaffold import scaffold_project
 from .validator import ValidationError, validate_against_schema, validate_export_model
 
@@ -56,7 +56,7 @@ CLI_DESCRIPTION = _read_project_description()
 
 def _cmd_validate(args: argparse.Namespace) -> int:
     raw = load_json_file(args.export)
-    validate_against_schema(raw, SCHEMA_PATH)
+    validate_against_schema(raw, schema_path_for_export(raw))
     model = load_export_model(args.export)
     validate_export_model(model)
     print("Validation successful")
@@ -99,8 +99,8 @@ def _cmd_info(args: argparse.Namespace) -> int:
             "unknown_contract_revision": "reject",
             "known_contract_revision": "accept",
         },
-        "model_contract": "parser-export-model.v1",
-        "schema_id": "parser-export-model.v1.schema.json",
+        "model_contract": "parser-export-model.v2",
+        "schema_id": "parser-export-model.v2.schema.json",
         "supported_export_version": 1,
         "supported_algorithms": ["Lalr1", "Llk"],
         "commands": ["validate", "run", "generate", "init", "info"],

@@ -13,6 +13,7 @@ EOF_TOKEN_INDEX = 0
 class _CompiledTerminal:
     index: int
     regex: re.Pattern[str]
+    scanner_states: set[int]
 
 
 class ScannerAdapter:
@@ -28,6 +29,17 @@ class ScannerAdapter:
         self._text = ""
         self._offset = 0
         self._compiled: list[_CompiledTerminal] = []
+        self._state_by_name: dict[str, int] = {
+            s.scanner_name: s.scanner_state for s in scanner_model.scanner_states
+        }
+        self._scanner_states: dict[int, Any] = {
+            s.scanner_state: s for s in scanner_model.scanner_states
+        }
+        self._initial_state = self._state_by_name.get(
+            "INITIAL",
+            scanner_model.scanner_states[0].scanner_state if scanner_model.scanner_states else 0,
+        )
+        self._state_stack: list[int] = [self._initial_state]
         self._prefer_scnr2 = prefer_scnr2
         self._scnr2_scanner: Any | None = None
         self._scnr2_matches: list[Any] = []
@@ -100,8 +112,47 @@ class ScannerAdapter:
         # Sort by token index to keep deterministic behavior aligned with exported order.
         for t in sorted(scanner_model.terminals, key=lambda x: x.index):
             pattern = t.expanded_pattern if t.kind == "Raw" else t.pattern
-            terminals.append(_CompiledTerminal(t.index, re.compile(pattern)))
+            terminals.append(
+                _CompiledTerminal(t.index, re.compile(pattern), set(t.scanner_states))
+            )
         return terminals
+
+    def _current_state(self) -> int:
+        return self._state_stack[-1] if self._state_stack else self._initial_state
+
+    def _skip_tokens_for_state(self, state: int) -> set[int]:
+        scanner_state = self._scanner_states.get(state)
+        if scanner_state is None:
+            return set()
+        return set(scanner_state.skip_tokens)
+
+    def _transition_target(self, transition: Any) -> int:
+        if transition.target_scanner_state is not None:
+            return transition.target_scanner_state
+        if transition.target_scanner_name is not None:
+            return self._state_by_name.get(transition.target_scanner_name, self._initial_state)
+        return self._initial_state
+
+    def _apply_transition(self, token_index: int) -> None:
+        current = self._current_state()
+        scanner_state = self._scanner_states.get(current)
+        if scanner_state is None:
+            return
+
+        transition = next(
+            (t for t in scanner_state.transitions if t.terminal_index == token_index),
+            None,
+        )
+        if transition is None:
+            return
+
+        if transition.kind == "Enter":
+            self._state_stack[-1] = self._transition_target(transition)
+        elif transition.kind == "Push":
+            self._state_stack.append(self._transition_target(transition))
+        elif transition.kind == "Pop":
+            if len(self._state_stack) > 1:
+                self._state_stack.pop()
 
     def _prepare_text_for_scnr2(self, text: str) -> str:
         # PoC alignment: emulate scanner-level ignored comments configured on INITIAL state.
@@ -134,6 +185,7 @@ class ScannerAdapter:
         self._text = text
         self._offset = 0
         self._buffer = []
+        self._state_stack = [self._initial_state]
         if self._scnr2_scanner is not None:
             prepared = self._prepare_text_for_scnr2(text)
             self._scnr2_matches = list(self._scnr2_scanner.find_matches_with_position(prepared))
@@ -146,40 +198,56 @@ class ScannerAdapter:
 
     def _read_next_raw_token(self) -> ParseToken:
         if self._scnr2_scanner is not None:
-            if self._scnr2_match_index >= len(self._scnr2_matches):
-                return ParseToken(index=EOF_TOKEN_INDEX, lexeme="", offset=len(self._text))
-            m = self._scnr2_matches[self._scnr2_match_index]
-            self._scnr2_match_index += 1
-            return ParseToken(index=int(m.token_type), lexeme=str(m.text), offset=int(m.start))
+            while True:
+                if self._scnr2_match_index >= len(self._scnr2_matches):
+                    return ParseToken(index=EOF_TOKEN_INDEX, lexeme="", offset=len(self._text))
+                m = self._scnr2_matches[self._scnr2_match_index]
+                self._scnr2_match_index += 1
+                token = ParseToken(index=int(m.token_type), lexeme=str(m.text), offset=int(m.start))
+                skip_tokens = self._skip_tokens_for_state(self._current_state())
+                self._apply_transition(token.index)
+                if token.index in skip_tokens:
+                    continue
+                return token
 
-        self._skip_ws()
-        if self._offset >= len(self._text):
-            return ParseToken(index=EOF_TOKEN_INDEX, lexeme="", offset=self._offset)
+        while True:
+            self._skip_ws()
+            if self._offset >= len(self._text):
+                return ParseToken(index=EOF_TOKEN_INDEX, lexeme="", offset=self._offset)
 
-        # Longest-match then lowest token index to improve determinism.
-        best_index = -1
-        best_lexeme = ""
+            # Longest-match then lowest token index to improve determinism.
+            best_index = -1
+            best_lexeme = ""
+            state = self._current_state()
 
-        for term in self._compiled:
-            match = term.regex.match(self._text, self._offset)
-            if not match:
+            for term in self._compiled:
+                if state not in term.scanner_states:
+                    continue
+                match = term.regex.match(self._text, self._offset)
+                if not match:
+                    continue
+                lexeme = match.group(0)
+                if not lexeme:
+                    continue
+                if len(lexeme) > len(best_lexeme) or (
+                    len(lexeme) == len(best_lexeme)
+                    and (best_index == -1 or term.index < best_index)
+                ):
+                    best_index = term.index
+                    best_lexeme = lexeme
+
+            if best_index == -1:
+                bad = self._text[self._offset : self._offset + 1]
+                raise ValueError(f"Lexing failed at offset {self._offset}: '{bad}'")
+
+            token = ParseToken(index=best_index, lexeme=best_lexeme, offset=self._offset)
+            self._offset += len(best_lexeme)
+
+            skip_tokens = self._skip_tokens_for_state(state)
+            self._apply_transition(token.index)
+            if token.index in skip_tokens:
                 continue
-            lexeme = match.group(0)
-            if not lexeme:
-                continue
-            if len(lexeme) > len(best_lexeme) or (
-                len(lexeme) == len(best_lexeme) and (best_index == -1 or term.index < best_index)
-            ):
-                best_index = term.index
-                best_lexeme = lexeme
-
-        if best_index == -1:
-            bad = self._text[self._offset : self._offset + 1]
-            raise ValueError(f"Lexing failed at offset {self._offset}: '{bad}'")
-
-        token = ParseToken(index=best_index, lexeme=best_lexeme, offset=self._offset)
-        self._offset += len(best_lexeme)
-        return token
+            return token
 
     def peek_token(self, lookahead: int = 0) -> ParseToken:
         if lookahead < 0:

@@ -12,12 +12,18 @@ Python parser runtime/generator consuming `parol export` JSON.
 
 ## Scope
 
-- Supports `ParserExportModel` version `1`
+- Supports `ParserExportModel` versions `1` and `2`
 - Supports export model validation for `algorithm = "Lalr1" | "Llk"`
 - Runtime parsing supports `Lalr1` and `Llk`
 - Uses `scnr2` Python binding as default scanner backend
 - Supports regex fallback scanner via `--no-scnr2`
 - Runs LALR shift/reduce and LLK predictive parse loops
+
+Schema compatibility notes:
+
+- `parser-export-model.v1.schema.json` and `parser-export-model.v2.schema.json` are shipped side-by-side.
+- Version `2` adds scanner-state `skip_tokens`; version `1` exports remain supported.
+- Schema selection is version-aware to keep strict validation for both contracts.
 
 ## Quick start
 

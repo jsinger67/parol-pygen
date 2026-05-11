@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## Unreleased
+## 0.2.0 - 2026-05-11
 
 - Added side-by-side export schema support for ParserExportModel v1 and v2.
 - Added `parser-export-model.v2.schema.json` with `version = 2` and kept `parser-export-model.v1.schema.json` for backward compatibility.
